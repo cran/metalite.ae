@@ -1,4 +1,4 @@
-## ---- include=FALSE-----------------------------------------------------------
+## ----include=FALSE------------------------------------------------------------
 knitr::opts_chunk$set(
   comment = "#>",
   collapse = TRUE,
@@ -7,17 +7,18 @@ knitr::opts_chunk$set(
 )
 
 ## -----------------------------------------------------------------------------
-library(metalite)
 library(metalite.ae)
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0summary1.pdf")
 
 ## -----------------------------------------------------------------------------
 meta <- meta_ae_example()
+
+## -----------------------------------------------------------------------------
 meta
 
-## ---- message=FALSE-----------------------------------------------------------
+## ----message=FALSE------------------------------------------------------------
 outdata <- prepare_ae_summary(
   meta,
   population = "apat",
@@ -73,7 +74,7 @@ outdata |>
     path_outtable = "rtf/ae0summary1.rtf"
   )
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0summary1.pdf")
 
 ## -----------------------------------------------------------------------------
@@ -87,7 +88,7 @@ outdata |>
     path_outtable = "rtf/ae0summary2.rtf"
   )
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0summary2.pdf")
 
 ## -----------------------------------------------------------------------------
@@ -98,6 +99,6 @@ outdata |>
     path_outtable = "rtf/mock_ae0summary1.rtf"
   )
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/mock_ae0summary1.pdf")
 

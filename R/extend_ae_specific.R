@@ -18,7 +18,7 @@
 
 #' Add inference information for AE specific analysis
 #'
-#' @param outdata A `outdata` object created by [prepare_ae_specific()].
+#' @param outdata An `outdata` object created by [prepare_ae_specific()].
 #' @param ci A numeric value for the percentile of confidence interval.
 #'
 #' @return A list of analysis raw datasets.
@@ -88,15 +88,15 @@ extend_ae_specific_inference <- function(outdata, ci = 0.95) {
   res$ci_upper <- ci_upper
   res$ci_level <- ci
   res$p <- p
-
+  res$extend_call <- c(res$call, match.call())
   res
 }
 
 #' Add average duration information for AE specific analysis
 #'
-#' @param outdata A `outdata` object created by [prepare_ae_specific()].
-#' @param duration_var A character value of variable name for AE duration.
-#' @param duration_unit A character value of AE duration unit.
+#' @param outdata An `outdata` object created by [prepare_ae_specific()].
+#' @param duration_var A character value of variable name for adverse event duration.
+#' @param duration_unit A character value of adverse event duration unit.
 #'
 #' @return A list of analysis raw datasets.
 #'
@@ -140,7 +140,7 @@ extend_ae_specific_duration <- function(outdata,
   par_var <- collect_adam_mapping(meta, parameter)$var
   par_soc <- collect_adam_mapping(meta, parameter)$soc
 
-  # Obtain Data
+  # Obtain data
   pop <- collect_population_record(meta, population, var = pop_var)
   obs <- collect_observation_record(meta, population, observation, parameter,
     var = unique(c(obs_var, par_var, par_soc, obs_dur))
@@ -181,7 +181,7 @@ extend_ae_specific_duration <- function(outdata,
   u_group <- levels(pop[[pop_group]])
   n_group <- length(u_group)
 
-  # Overall Duration
+  # Overall duration
   obs_duration <- avg_duration(obs[[obs_id]], obs[[obs_group]], obs[[obs_dur]])
   obs_order <- 1e2
 
@@ -204,7 +204,7 @@ extend_ae_specific_duration <- function(outdata,
     se <- rbind(se, par_duration$se)
   }
 
-  # Define Order and add blank row
+  # Define order and add a blank row
   index <- c(obs_order, soc_order, par_order)
   blank_order <- setdiff(outdata$order, index)
   blank_row <- data.frame(matrix(NA, nrow = length(blank_order), ncol = n_group))
@@ -219,13 +219,14 @@ extend_ae_specific_duration <- function(outdata,
 
   outdata$dur <- avg
   outdata$dur_se <- se
+  outdata$extend_call <- c(outdata$extend_call, match.call())
 
   outdata
 }
 
 #' Add average number of events information for AE specific analysis
 #'
-#' @param outdata A `outdata` object created by [prepare_ae_specific()].
+#' @param outdata An `outdata` object created by [prepare_ae_specific()].
 #'
 #' @return A list of analysis raw datasets.
 #'
@@ -254,7 +255,7 @@ extend_ae_specific_events <- function(outdata) {
   par_var <- collect_adam_mapping(meta, parameter)$var
   par_soc <- collect_adam_mapping(meta, parameter)$soc
 
-  # Obtain Data
+  # Obtain data
   pop <- collect_population_record(meta, population, var = pop_var)
   obs <- collect_observation_record(meta, population, observation, parameter,
     var = unique(c(obs_var, par_var, par_soc))
@@ -295,7 +296,7 @@ extend_ae_specific_events <- function(outdata) {
   u_group <- levels(pop[[pop_group]])
   n_group <- length(u_group)
 
-  # Overall Duration
+  # Overall duration
   obs_events <- avg_event(obs[[obs_id]], obs[[obs_group]])
   obs_order <- 1e2
 
@@ -318,7 +319,7 @@ extend_ae_specific_events <- function(outdata) {
     se <- rbind(se, par_events$se)
   }
 
-  # Define Order and add blank row
+  # Define order and add a blank row
   index <- c(obs_order, soc_order, par_order)
   blank_order <- setdiff(outdata$order, index)
   blank_row <- data.frame(matrix(NA, nrow = length(blank_order), ncol = n_group))
@@ -333,6 +334,44 @@ extend_ae_specific_events <- function(outdata) {
 
   outdata$events <- avg
   outdata$events_se <- se
+  outdata$extend_call <- c(outdata$extend_call, match.call())
 
   outdata
+}
+
+#' Add subgroup analysis in AE specific analysis
+#'
+#' @param outdata An `outdata` object created by [prepare_ae_specific()].
+#' @param subgroup_var a character string for subgroup variable name
+#'
+#' @return A list of analysis raw datasets.
+#' @export
+#' @examples
+#' meta <- meta_ae_example()
+#' tbl <- prepare_ae_specific(meta,
+#'   population = "apat",
+#'   observation = "wk12",
+#'   parameter = "rel"
+#' ) |>
+#'   extend_ae_specific_subgroup(subgroup_var = "SEX")
+extend_ae_specific_subgroup <- function(outdata, subgroup_var) {
+  outdata$subgroup_var <- subgroup_var
+  outdata$subgroup_header <- c(outdata$meta$population[[outdata$population]]$group, outdata$subgroup_var)
+  meta_subgroup <- metalite::meta_split(outdata$meta, outdata$subgroup_header[2])
+  outdata$components <- c("soc", "par")
+
+  subgrp_out <- lapply(meta_subgroup, function(subgroup) {
+    prepare_ae_specific(
+      meta = outdata$meta,
+      population = outdata$population,
+      observation = outdata$observation,
+      parameter = outdata$parameter,
+      components = outdata$components
+    )
+  })
+
+  out_all <- subgrp_out
+  out_all$Total <- outdata
+
+  return(out_all)
 }

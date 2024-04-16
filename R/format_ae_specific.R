@@ -23,18 +23,18 @@
 #' @param digits_ci A numeric value of number of digits for confidence interval.
 #' @param digits_p A numeric value of number of digits for p-value.
 #' @param digits_dur A numeric value of number of digits for average
-#'   duration of AE.
+#'   duration of adverse event.
 #' @param digits_events A numeric value of number of digits for average of
-#'   number of AE per subjects.
+#'   number of adverse events per subject.
 #' @param display A character vector of measurement to be displayed:
-#'   - `n`: Number of subjects with AE.
-#'   - `prop`: Proportion of subjects with AE.
+#'   - `n`: Number of subjects with adverse event.
+#'   - `prop`: Proportion of subjects with adverse event.
 #'   - `total`: Total columns.
 #'   - `diff`: Risk difference.
 #'   - `diff_ci`: 95% confidence interval of risk difference using M&N method.
 #'   - `diff_p`: p-value of risk difference using M&N method.
-#'   - `dur`: Average of AE duration.
-#'   - `events`: Average number of AE per subject.
+#'   - `dur`: Average of adverse event duration.
+#'   - `events`: Average number of adverse event per subject.
 #' @param mock A boolean value to display mock table.
 #'
 #' @return A list of analysis raw datasets.
@@ -193,23 +193,25 @@ format_ae_specific <- function(outdata,
     ncol = n_group, byrow = TRUE
   ))]
 
-  # Arrange Between Group information
+  # Arrange group comparison information (diff, diff_ci, diff_p).
   between_var <- names(tbl)[names(tbl) %in% c("diff", "diff_ci", "diff_p")]
-  between_tbl <- tbl[between_var]
-  n_between <- length(between_tbl)
-  n_group_btw <- n_group - 1 - display_total # Always groups - 1 - total col
 
-  names(between_tbl) <- NULL
-  between_tbl <- do.call(cbind, between_tbl)
-  between_tbl <- between_tbl[, as.vector(matrix(1:(n_group_btw * n_between),
-    ncol = n_group_btw, byrow = TRUE
-  ))]
-
-  # Create Results
-  if (is.null(between_tbl)) {
-    res <- within_tbl
+  ## If there are any comparison variables selected, order their columns appropriately.
+  res <- if (length(between_var) != 0) {
+    between_tbl <- tbl[between_var]
+    n_between <- length(between_tbl)
+    # Number of comparison columns is always: treatment groups - 1 - total column (1 or 0).
+    n_group_btw <- n_group - 1 - display_total
+    names(between_tbl) <- NULL
+    # Bind all the comparison columns together.
+    between_tbl <- do.call(cbind, between_tbl)
+    # Reorder the comparison columns.
+    between_tbl <- between_tbl[, as.vector(matrix(1:(n_group_btw * n_between),
+      ncol = n_group_btw, byrow = TRUE
+    ))]
+    data.frame(within_tbl, between_tbl)
   } else {
-    res <- data.frame(within_tbl, between_tbl)
+    within_tbl
   }
 
   # Transfer to Mock
@@ -226,5 +228,7 @@ format_ae_specific <- function(outdata,
   }
 
   outdata$tbl <- res
+  outdata$extend_call <- c(outdata$extend_call, match.call())
+
   outdata
 }

@@ -1,0 +1,121 @@
+---
+title: "Exposure Adjusted Event Rate"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Exposure Adjusted Event Rate}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This is a supplementary document for the file "Exposure-Adjusted Adverse Event
+Summary (Updated)".
+We first provide an explanation for the calculation of the exposure adjusted
+event rate (EAER) of adverse events, and then briefly summarize the
+programming steps of this calculation.
+
+## EAER formula explanation
+
+### EAER formula
+
+$$
+\begin{aligned}
+EAER_j (\text{EAER for } Trt_j)
+&= \frac{\text{total number of events for } Trt_j}{\text{total person-days for } Trt_j/(\text{exp factor})}  \\
+&= \frac{\text{total number of events for } Trt_j \times \text{exp factor}}{\text{total person-days for } Trt_j}
+\end{aligned}
+$$
+
+The exposure factor (exp factor) will be adjusted depending on the adjustment
+unit defined by users. For instance, when the adjustment unit is
+'100 person-month', EAER will be computed as follows:
+
+$$
+\begin{aligned}
+EAER_j (\text{100 person-months})
+&= \frac{\text{total number of events for } Trt_j \times \text{exp factor} (=100\times30.4367)}{\text{total person-days for } Trt_j}  \\
+&= \frac{\text{total number of events for } Trt_j \times 3043.67}{\text{total person-days for } Trt_j}
+\end{aligned}
+$$
+
+### EAER for different types of AEs
+
+As an example, below are the EAER definitions for three types of AEs using
+three treatment groups (PBO, Low Dose, High Dose).
+
+#### ANY AE adj rate
+
+$$
+EAER_{PBO} (\text{100 person-months}) =\frac{\text{total number of AEs for PBO} \times 3043.67}{\text{total person-days for PBO}}
+$$
+
+$$
+EAER_{LD} (\text{100 person-months}) =\frac{\text{total number of AEs for Low Dose} \times 3043.67}{\text{total person-days for Low Dose}}
+$$
+
+$$
+EAER_{HD} (\text{100 person-months}) =\frac{\text{total number of AEs for High Dose} \times 3043.67}{\text{total person-days for High Dose}}
+$$
+
+#### Serious AE adj rate
+
+$$
+EAER_{PBO} (\text{100 person-months}) =\frac{\text{total number of SAEs for PBO} \times 3043.67}{\text{total person-days for PBO}}
+$$
+
+$$
+EAER_{LD} (\text{100 person-months}) =\frac{\text{total number of SAEs for Low Dose} \times 3043.67}{\text{total person-days for Low Dose}}
+$$
+
+$$
+EAER_{HD} (\text{100 person-months}) =\frac{\text{total number of SAEs for High Dose} \times 3043.67}{\text{total person-days for High Dose}}
+$$
+
+#### REL AE adj rate
+
+$$
+EAER_{PBO} (\text{100 person-months}) =\frac{\text{total number of Drug-Related AEs for PBO} \times 3043.67}{\text{total person-days for PBO}}
+$$
+
+$$
+EAER_{LD} (\text{100 person-months}) =\frac{\text{total number of Drug-Related AEs for Low Dose} \times 3043.67}{\text{total person-days for Low Dose}}
+$$
+
+$$
+EAER_{HD} (\text{100 person-months}) =\frac{\text{total number of Drug-Related AEs for High Dose} \times 3043.67}{\text{total person-days for High Dose}}
+$$
+
+## Programming steps of EAER
+
+- Data preprocessing: At the end of this step, `adae` is created.
+- Build a metadata object: At the end of this step, `meta` is created.
+- Call the function `prepare_ae_summary()` and `extend_ae_summary_eaer()`. 
+  This extend function has the following arguments: 
+  `outdata`, `duration_var`, and `adj_unit`.
+  The output will be a list:
+
+```{r}
+library(metalite.ae)
+```
+
+```{r, message = FALSE}
+meta <- meta_ae_example()
+
+x <- meta |>
+  prepare_ae_summary(
+    population = "apat",
+    observation = "wk12",
+    parameter = "any;rel;ser",
+  ) |>
+  extend_ae_summary_eaer(
+    duration_var = "TRTDUR",
+    adj_unit = "month"
+  )
+
+x
+```
+
+Run `x$eaer` to get the EAER:
+
+```{r}
+x$eaer
+```

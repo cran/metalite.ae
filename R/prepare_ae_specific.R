@@ -29,7 +29,7 @@
 #' @param reference_group An integer to indicate reference group.
 #'   Default is 2 if there are 2 groups, otherwise, the default is 1.
 #'
-#' @return A list of analysis raw datasets.
+#' @return A list of analysis datasets needed for AE specific analysis.
 #'
 #' @import metalite
 #'
@@ -49,32 +49,6 @@ prepare_ae_specific <- function(meta,
                                 parameter,
                                 components = c("soc", "par"),
                                 reference_group = NULL) {
-  # Check if the grouping variable is missing
-  pop_grp <- vapply(meta$population, "[[", FUN.VALUE = character(1), "group")
-  obs_grp <- vapply(meta$population, "[[", FUN.VALUE = character(1), "group")
-  grp <- unique(c(pop_grp, obs_grp))
-
-  for (i in seq(grp)) {
-    if (any(is.na(meta$data_population[[grp[i]]]))) {
-      stop(
-        paste0(
-          "There are >= 1 subjects with missing grouping variable '", grp[i],
-          "' in the population dataset."
-        ),
-        call. = FALSE
-      )
-    }
-    if (any(is.na(meta$data_observation[[grp[i]]]))) {
-      stop(
-        paste0(
-          "There are >= 1 subjects with missing grouping variable '", grp[i],
-          "' in the observation dataset."
-        ),
-        call. = FALSE
-      )
-    }
-  }
-
   # Obtain variables
   pop_var <- collect_adam_mapping(meta, population)$var
   obs_var <- collect_adam_mapping(meta, observation)$var
@@ -93,6 +67,26 @@ prepare_ae_specific <- function(meta,
   pop_group <- collect_adam_mapping(meta, population)$group
   obs_group <- collect_adam_mapping(meta, observation)$group
 
+  # Check if the grouping variable is missing
+  if (any(is.na(pop[[pop_group]]))) {
+    stop(
+      paste0(
+        "There are >= 1 subjects with missing grouping variable '", pop_group,
+        "' in the population dataset."
+      ),
+      call. = FALSE
+    )
+  }
+  if (any(is.na(obs[[obs_group]]))) {
+    stop(
+      paste0(
+        "There are >= 1 subjects with missing grouping variable '", obs_group,
+        "' in the observation dataset."
+      ),
+      call. = FALSE
+    )
+  }
+
   # Ensure group is a factor
   if (!"factor" %in% class(pop[[pop_group]])) {
     warning("In population level data, force group variable '", pop_group, "' be a factor")
@@ -101,7 +95,8 @@ prepare_ae_specific <- function(meta,
 
   if (!"factor" %in% class(obs[[obs_group]])) {
     warning("In observation level data, force group variable '", obs_group, "' be a factor")
-    obs[[obs_group]] <- factor(obs[[obs_group]], levels = levels(pop[[pop_group]]))
+    obs[[obs_group]] <- factor(obs[[obs_group]])
+    levels(obs[[obs_group]]) <- levels(pop[[pop_group]])
   }
 
   # Add a total group to display total column
@@ -132,8 +127,8 @@ prepare_ae_specific <- function(meta,
   }
 
   # Number of subjects
-  pop_n <- n_subject(pop[[pop_id]], pop[[pop_group]])
-  obs_n <- n_subject(obs[[obs_id]], obs[[obs_group]])
+  pop_n <- metalite::n_subject(pop[[pop_id]], pop[[pop_group]])
+  obs_n <- metalite::n_subject(obs[[obs_id]], obs[[obs_group]])
   obs_n <- rbind(obs_n, pop_n - obs_n)
 
   # Define Population section
@@ -153,12 +148,15 @@ prepare_ae_specific <- function(meta,
 
   # Define SOC section
   if ("soc" %in% components && nrow(obs) > 0) {
-    soc_n <- n_subject(obs[[obs_id]], obs[[obs_group]], obs[[par_soc]])
+    soc_n <- metalite::n_subject(obs[[obs_id]], obs[[obs_group]], obs[[par_soc]],
+      na = "NULL"
+    )
 
     soc_n[[par_soc]] <- soc_n$name
     soc_n[[par_var]] <- soc_n$name
     soc_n$order <- 1e3 * seq_len(nrow(soc_n))
     soc_n$name <- to_sentence(soc_n$name)
+    soc_n$soc_name <- soc_n$name
   } else {
     soc_n <- NULL
   }
@@ -167,12 +165,16 @@ prepare_ae_specific <- function(meta,
   if ("par" %in% components && nrow(obs) > 0) {
     u_soc <- unique(obs[order(obs[[par_soc]]), c(par_soc, par_var)])
 
-    par_n <- n_subject(obs[[obs_id]], obs[[obs_group]], obs[[par_var]])
+    par_n <- metalite::n_subject(obs[[obs_id]], obs[[obs_group]], obs[[par_var]],
+      na = "NULL"
+    )
 
     par_n[[par_var]] <- par_n$name
     par_n <- merge(u_soc, par_n, all.y = TRUE)
     par_n$order <- 1e3 * as.numeric(factor(par_n[[par_soc]])) + seq_len(nrow(par_n))
+    par_n$order[is.na(par_n$order)] <- (if (!all(is.na(soc_n$order))) max(soc_n$order, na.rm = TRUE) else -Inf) + 1
     par_n$name <- to_sentence(par_n$name)
+    par_n$soc_name <- par_n[[par_soc]]
   } else {
     par_n <- NULL
   }
@@ -183,8 +185,14 @@ prepare_ae_specific <- function(meta,
   names(blank_row) <- names(pop_n[, col])
 
   # Combine count values
-  tbl <- rbind(pop_n[, col], obs_n[, col], blank_row, par_n[, col], soc_n[, col])
+  tbl0 <- rbind(pop_n[, col], obs_n[, col], blank_row)
+  tbl0$soc_name <- NA
+  tbl <- rbind(par_n[, c(col, "soc_name")], soc_n[, c(col, "soc_name")])
+  tbl <- rbind(tbl0, tbl)
   tbl <- tbl[order(tbl$order), ]
+  soc_name <- tbl$soc_name
+  tbl <- tbl[, !(names(tbl) %in% "soc_name")]
+
 
   # Calculate Proportion
   tbl_num <- tbl[, u_group]
@@ -205,6 +213,8 @@ prepare_ae_specific <- function(meta,
     prop = tbl_rate, diff = tbl_diff,
     n_pop = tbl_num[1, ],
     name = tbl$name,
-    components = components
+    soc_name = soc_name,
+    components = components,
+    prepare_call = match.call()
   )
 }

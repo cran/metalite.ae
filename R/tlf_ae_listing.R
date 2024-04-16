@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#' Specific adverse events table
+#' Generate AE listing
 #'
-#' @param outdata A outdata list created by [prepare_ae_listing()].
+#' @param outdata An `outdata` object created by [prepare_ae_listing()].
 #' @param footnotes A character vector of table footnotes.
 #' @param source A character value of the data source.
 #' @inheritParams r2rtf::rtf_page
@@ -26,7 +26,7 @@
 #' @param path_outdata A character string of the outdata path.
 #' @param path_outtable A character string of the outtable path.
 #'
-#' @return RTF file and source dataset for AE listing.
+#' @return RTF file and the source dataset for AE listing.
 #'
 #' @export
 #'

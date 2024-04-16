@@ -20,7 +20,7 @@
 #'
 #' @inheritParams tlf_ae_specific
 #'
-#' @return RTF file and source dataset for AE listing.
+#' @return RTF file and the source dataset for AE summary table.
 #'
 #' @export
 #'
@@ -43,6 +43,7 @@ tlf_ae_summary <- function(outdata,
                            col_rel_width = NULL,
                            text_font_size = 9,
                            orientation = "portrait",
+                           title = c("analysis", "observation", "population"),
                            footnotes = NULL,
                            path_outdata = NULL,
                            path_outtable = NULL) {
@@ -56,7 +57,16 @@ tlf_ae_summary <- function(outdata,
   parameters <- unlist(strsplit(outdata$parameter, ";"))
 
   # Title
-  title <- collect_title(outdata$meta, outdata$population, outdata$observation, parameters[1], analysis = "ae_summary")
+  # Define title
+  if ("analysis" %in% title | "observation" %in% title | "population" %in% title) {
+    title <- collect_title(outdata$meta,
+      outdata$population,
+      outdata$observation,
+      parameters[1],
+      analysis = "ae_summary",
+      title_order = title
+    )
+  }
 
   # Footnotes
   x <- lapply(parameters, function(x) {

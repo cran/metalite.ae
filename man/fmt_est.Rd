@@ -14,7 +14,7 @@ fmt_est(
 \arguments{
 \item{mean}{A numeric vector of mean value.}
 
-\item{sd}{A numeric vector of sd value.}
+\item{sd}{A numeric vector of standard deviation value.}
 
 \item{digits}{Digits of each column, i.e., format as x.x (x.xx).}
 
@@ -47,13 +47,6 @@ Decimals will understand the number will be formatted as x.x (x.xx).
 }
 
 \examples{
-library(dplyr)
-
-x <- datasets::iris |>
-  summarise(
-    mean = mean(Petal.Length),
-    n = n(),
-    sd = sd(Petal.Length)
-  )
-fmt_est(x$mean, x$sd)
+fmt_est(mean(iris$Petal.Length), sd(iris$Petal.Length))
+fmt_est(mean(iris$Petal.Length), sd(iris$Petal.Length), digits = c(2, 3))
 }

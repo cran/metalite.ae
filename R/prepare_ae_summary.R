@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#' Prepare datasets for AE specific analysis
+#' Prepare datasets for AE summary
 #'
 #' @inheritParams prepare_ae_specific
 #' @param ... Additional arguments passed to [prepare_ae_specific()].
 #'
-#' @return A list of analysis raw datasets.
+#' @return A list of analysis datasets needed for AE summary.
 #'
 #' @export
 #'
@@ -38,36 +38,10 @@ prepare_ae_summary <- function(meta,
                                observation,
                                parameter,
                                ...) {
-  # Check if the grouping variable is missing
-  pop_grp <- vapply(meta$population, "[[", FUN.VALUE = character(1), "group")
-  obs_grp <- vapply(meta$population, "[[", FUN.VALUE = character(1), "group")
-  grp <- unique(c(pop_grp, obs_grp))
-
-  for (i in seq(grp)) {
-    if (any(is.na(meta$data_population[[grp[i]]]))) {
-      stop(
-        paste0(
-          "There are >= 1 subjects with missing grouping variable '", grp[i],
-          "' in the population dataset."
-        ),
-        call. = FALSE
-      )
-    }
-    if (any(is.na(meta$data_observation[[grp[i]]]))) {
-      stop(
-        paste0(
-          "There are >= 1 subjects with missing grouping variable '", grp[i],
-          "' in the observation dataset."
-        ),
-        call. = FALSE
-      )
-    }
-  }
-
   parameters <- unlist(strsplit(parameter, ";"))
 
   res <- lapply(parameters, function(x) {
-    print(x)
+    message(x)
     prepare_ae_specific(meta,
       population = population, observation = observation, parameter = x,
       components = NULL, ...
@@ -129,7 +103,8 @@ prepare_ae_summary <- function(meta,
     prop = rbind(pop_prop, tbl_prop),
     diff = rbind(pop_diff, tbl_diff),
     n_pop = n_pop,
-    name = c(pop_name, name)
+    name = c(pop_name, name),
+    prepare_call = match.call()
   )
 }
 

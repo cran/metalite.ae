@@ -1,4 +1,4 @@
-## ---- include=FALSE-----------------------------------------------------------
+## ----include=FALSE------------------------------------------------------------
 knitr::opts_chunk$set(
   comment = "#>",
   collapse = TRUE,
@@ -8,13 +8,14 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 library(metalite.ae)
-library(metalite)
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0listing0ser0wk12.pdf")
 
 ## -----------------------------------------------------------------------------
 meta <- meta_ae_example()
+
+## -----------------------------------------------------------------------------
 meta
 
 ## -----------------------------------------------------------------------------
@@ -25,7 +26,11 @@ tbl <- prepare_ae_listing(
   observation = "wk12",
   parameter = "ser"
 )
+
+## -----------------------------------------------------------------------------
 head(tbl$tbl)
+
+## -----------------------------------------------------------------------------
 head(tbl$col_name)
 
 ## -----------------------------------------------------------------------------
@@ -45,6 +50,6 @@ tbl |> tlf_ae_listing(
   path_outdata = NULL
 )
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0listing0ser0wk12.pdf")
 

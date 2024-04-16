@@ -10,13 +10,14 @@ tlf_ae_summary(
   col_rel_width = NULL,
   text_font_size = 9,
   orientation = "portrait",
+  title = c("analysis", "observation", "population"),
   footnotes = NULL,
   path_outdata = NULL,
   path_outtable = NULL
 )
 }
 \arguments{
-\item{outdata}{A outdata list created from \code{\link[=prepare_ae_specific]{prepare_ae_specific()}}.}
+\item{outdata}{An \code{outdata} object created by \code{\link[=prepare_ae_specific]{prepare_ae_specific()}}.}
 
 \item{source}{A character value of the data source.}
 
@@ -29,6 +30,9 @@ displayed e.g. c(9,20,40).}
 
 \item{orientation}{Orientation in 'portrait' or 'landscape'.}
 
+\item{title}{Term "analysis", "observation"and "population") for collecting
+title from metadata or a character vector of table titles.}
+
 \item{footnotes}{A character vector of table footnotes.}
 
 \item{path_outdata}{A character string of the outdata path.}
@@ -36,7 +40,7 @@ displayed e.g. c(9,20,40).}
 \item{path_outtable}{A character string of the outtable path.}
 }
 \value{
-RTF file and source dataset for AE listing.
+RTF file and the source dataset for AE summary table.
 }
 \description{
 AE summary table

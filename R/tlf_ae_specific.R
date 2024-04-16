@@ -18,18 +18,19 @@
 
 #' Specific adverse events table
 #'
-#' @param outdata A outdata list created from [prepare_ae_specific()].
+#' @param outdata An `outdata` object created by [prepare_ae_specific()].
 #' @param meddra_version A character value of the MedDRA version
 #'   for this dataset.
 #' @param source A character value of the data source.
 #' @inheritParams r2rtf::rtf_page
 #' @inheritParams r2rtf::rtf_body
 #' @param footnotes A character vector of table footnotes.
-#' @param title A character vector of table titles.
+#' @param title Term "analysis", "observation"and "population") for collecting
+#'   title from metadata or a character vector of table titles.
 #' @param path_outdata A character string of the outdata path.
 #' @param path_outtable A character string of the outtable path.
 #'
-#' @return RTF file and source dataset for AE specific table.
+#' @return RTF file and the source dataset for AE specific table.
 #'
 #' @export
 #'
@@ -56,7 +57,7 @@ tlf_ae_specific <- function(outdata,
                             text_font_size = 9,
                             orientation = "portrait",
                             footnotes = NULL,
-                            title = NULL,
+                            title = c("analysis", "observation", "population"),
                             path_outdata = NULL,
                             path_outtable = NULL) {
   if (is.null(footnotes)) {
@@ -92,12 +93,13 @@ tlf_ae_specific <- function(outdata,
   }
 
   # Define title
-  if (is.null(title)) {
+  if ("analysis" %in% title | "observation" %in% title | "population" %in% title) {
     title <- collect_title(outdata$meta,
       outdata$population,
       outdata$observation,
       outdata$parameter,
-      analysis = "ae_specific"
+      analysis = "ae_specific",
+      title_order = title
     )
   }
 
@@ -126,10 +128,7 @@ tlf_ae_specific <- function(outdata,
   )
 
   colhead_1_within <- paste(group, collapse = " | ")
-
-  colhead_2_within <- paste(rep(colhead_within, n_group),
-    collapse = " | "
-  )
+  colhead_2_within <- paste(rep(colhead_within, n_group), collapse = " | ")
 
   colborder_within <- vapply(
     X = col_tbl_within,

@@ -12,13 +12,13 @@ tlf_ae_specific(
   text_font_size = 9,
   orientation = "portrait",
   footnotes = NULL,
-  title = NULL,
+  title = c("analysis", "observation", "population"),
   path_outdata = NULL,
   path_outtable = NULL
 )
 }
 \arguments{
-\item{outdata}{A outdata list created from \code{\link[=prepare_ae_specific]{prepare_ae_specific()}}.}
+\item{outdata}{An \code{outdata} object created by \code{\link[=prepare_ae_specific]{prepare_ae_specific()}}.}
 
 \item{meddra_version}{A character value of the MedDRA version
 for this dataset.}
@@ -36,14 +36,15 @@ displayed e.g. c(9,20,40).}
 
 \item{footnotes}{A character vector of table footnotes.}
 
-\item{title}{A character vector of table titles.}
+\item{title}{Term "analysis", "observation"and "population") for collecting
+title from metadata or a character vector of table titles.}
 
 \item{path_outdata}{A character string of the outdata path.}
 
 \item{path_outtable}{A character string of the outtable path.}
 }
 \value{
-RTF file and source dataset for AE specific table.
+RTF file and the source dataset for AE specific table.
 }
 \description{
 Specific adverse events table

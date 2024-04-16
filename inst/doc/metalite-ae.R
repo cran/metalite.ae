@@ -1,4 +1,4 @@
-## ---- include=FALSE-----------------------------------------------------------
+## ----include=FALSE------------------------------------------------------------
 knitr::opts_chunk$set(
   comment = "#>",
   collapse = TRUE,
@@ -7,11 +7,10 @@ knitr::opts_chunk$set(
   eval = TRUE
 )
 
-## ---- include=FALSE-----------------------------------------------------------
-library(metalite)
+## ----include=FALSE------------------------------------------------------------
 library(metalite.ae)
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  meta_ae_example() |> # Example AE data created using metalite
 #    prepare_ae_summary(
 #      population = "apat", # Select population by keywords
@@ -24,6 +23,6 @@ library(metalite.ae)
 #      path_outtable = "ae0summary.rtf" # Define output
 #    )
 
-## ---- out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0summary1.pdf")
 
