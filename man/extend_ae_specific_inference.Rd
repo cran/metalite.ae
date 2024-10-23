@@ -4,10 +4,12 @@
 \alias{extend_ae_specific_inference}
 \title{Add inference information for AE specific analysis}
 \usage{
-extend_ae_specific_inference(outdata, ci = 0.95)
+extend_ae_specific_inference(outdata, ..., ci = 0.95)
 }
 \arguments{
 \item{outdata}{An \code{outdata} object created by \code{\link[=prepare_ae_specific]{prepare_ae_specific()}}.}
+
+\item{...}{Other options passed on to \code{\link[=rate_compare_sum]{rate_compare_sum()}}}
 
 \item{ci}{A numeric value for the percentile of confidence interval.}
 }
@@ -24,7 +26,7 @@ tbl <- prepare_ae_specific(meta,
   observation = "wk12",
   parameter = "rel"
 ) |>
-  extend_ae_specific_inference() |>
+  extend_ae_specific_inference(eps = 1e-6, bisection = 200) |>
   format_ae_specific(display = c("n", "prop", "diff", "diff_ci"))
 head(tbl$tbl)
 }

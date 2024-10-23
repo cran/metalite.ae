@@ -19,6 +19,7 @@
 #' Format AE specific analysis
 #'
 #' @inheritParams extend_ae_specific_inference
+#' @param hide_soc_stats A boolean value to hide stats for SOC rows.
 #' @param digits_prop A numeric value of number of digits for proportion value.
 #' @param digits_ci A numeric value of number of digits for confidence interval.
 #' @param digits_p A numeric value of number of digits for p-value.
@@ -34,7 +35,21 @@
 #'   - `diff_ci`: 95% confidence interval of risk difference using M&N method.
 #'   - `diff_p`: p-value of risk difference using M&N method.
 #'   - `dur`: Average of adverse event duration.
-#'   - `events`: Average number of adverse event per subject.
+#'   - `events_avg`: Average number of adverse event per subject.
+#'   - `events_count`: Count number of adverse event per subject.
+#' @param filter_method A character value to specify how to filter rows:
+#'  - `count`: Filtered based on participant count.
+#'  - `percent`: Filtered based percent incidence.
+#' @param filter_criteria A numeric value to display rows where at least
+#'    one therapy group has a percent incidence or participant count
+#'    greater than or equal to the specified value.
+#'    If `filter_method` is `percent`, the value should be between 0 and 100.
+#'    If `filter_method` is `count`, the value should be greater than 0.
+#' @param sort_order A character value to specify sorting order:
+#'  - `alphabetical`: Sort by alphabetical order.
+#'  - `count_des`: Sort by count in descending order.
+#'  - `count_asc`: Sort by count in ascending order.
+#' @param sort_column A character value of `group` in `outdata` used to sort a table with.
 #' @param mock A boolean value to display mock table.
 #'
 #' @return A list of analysis raw datasets.
@@ -55,24 +70,39 @@
 #'   format_ae_specific()
 #' head(tbl$tbl)
 #'
+#' # Filtering
+#' tbl <- outdata |>
+#'   format_ae_specific(
+#'     filter_method = "percent",
+#'     filter_criteria = 10
+#'   )
+#' head(tbl$tbl)
+#'
 #' # Display different measurements
 #' tbl <- outdata |>
 #'   extend_ae_specific_events() |>
-#'   format_ae_specific(display = c("n", "prop", "events"))
+#'   format_ae_specific(display = c("n", "prop", "events_count"))
 #' head(tbl$tbl)
 format_ae_specific <- function(outdata,
                                display = c("n", "prop", "total"),
+                               hide_soc_stats = FALSE,
                                digits_prop = 1,
                                digits_ci = 1,
                                digits_p = 3,
                                digits_dur = c(1, 1),
                                digits_events = c(1, 1),
+                               filter_method = c("percent", "count"),
+                               filter_criteria = 0,
+                               sort_order = c("alphabetical", "count_des", "count_asc"),
+                               sort_column = NULL,
                                mock = FALSE) {
   display <- tolower(display)
   display <- match.arg(display,
-    c("n", "prop", "total", "diff", "diff_ci", "diff_p", "dur", "events"),
+    c("n", "prop", "total", "diff", "diff_ci", "diff_p", "dur", "events_avg", "events_count"),
     several.ok = TRUE
   )
+  filter_method <- match.arg(filter_method, c("percent", "count"))
+  sort_order <- match.arg(sort_order, c("alphabetical", "count_des", "count_asc"))
 
   # Add "n"
   display <- unique(c("n", display))
@@ -164,25 +194,36 @@ format_ae_specific <- function(outdata,
     tbl[["dur"]] <- dur
   }
 
-  if ("events" %in% display) {
-    if (is.null(outdata$events)) {
+  if ("events_avg" %in% display) {
+    if (is.null(outdata$events_avg)) {
       stop(
         "Please use `extend_ae_specific_events()` to get events.",
         call. = FALSE
       )
     }
 
-    events <- outdata$events[, index_total] * NA
+    events_avg <- outdata$events_avg[, index_total] * NA
     for (i in seq(index_total)) {
-      m <- outdata$events[[i]]
+      m <- outdata$events_avg[[i]]
       se <- outdata$events_se[[i]]
-      events[, i] <- fmt_est(m, se, digits = digits_dur)
+      events_avg[, i] <- fmt_est(m, se, digits = digits_dur)
     }
-    tbl[["events"]] <- events
+    tbl[["events_avg"]] <- events_avg
+  }
+
+  if ("events_count" %in% display) {
+    if (is.null(outdata$events_count)) {
+      stop(
+        "Please use `extend_ae_specific_events()` to get events.",
+        call. = FALSE
+      )
+    }
+
+    tbl[["events_count"]] <- outdata$events_count[, index_total]
   }
 
   # Arrange Within Group information
-  within_var <- names(tbl)[names(tbl) %in% c("n", "prop", "dur", "events")]
+  within_var <- names(tbl)[names(tbl) %in% c("n", "prop", "dur", "events_avg", "events_count")]
   within_tbl <- tbl[within_var]
 
   names(within_tbl) <- NULL
@@ -214,13 +255,96 @@ format_ae_specific <- function(outdata,
     within_tbl
   }
 
-  # Transfer to Mock
-  if (mock) {
-    n_mock <- min(20, nrow(tbl[[1]]), na.rm = TRUE)
-    res <- to_mock(res, n = nrow(tbl[[1]]))
+  res <- data.frame(name = outdata$name, res)
+
+  # Additional options for AE specific
+  if ("prepare_ae_specific" %in% as.character(outdata$prepare_call)) {
+    if ("soc_name" %in% names(outdata)) {
+      soc_name <- outdata$soc_name
+    }
+
+    # Filtering by criteria
+    if (filter_criteria > 0) {
+      if (filter_method == "percent") {
+        # Round before filtering
+        filter_index <- round(outdata$prop[, index_total], digits_prop)
+      } else {
+        filter_index <- outdata$n[, index_total]
+      }
+
+      # Create filter text
+      filter_text <- paste0("filter_index[", index_total, "] >= ", filter_criteria, collapse = " | ")
+      filter_logic <- eval(parse(text = filter_text))
+      # Keep fixed rows
+      filter_logic[1:4] <- rep(TRUE, 4)
+      res <- res[filter_logic, ]
+      outdata$order <- outdata$order[filter_logic]
+      soc_name <- soc_name[filter_logic]
+    }
+
+    # Get index of sort column
+    if (sort_order %in% c("count_des", "count_asc")) {
+      index_group <- which(outdata$group == sort_column)
+      if (length(index_group) == 0) {
+        message(paste(
+          'If `sort_order` = "count_des" or "count_asc", `sort_column` should be specified as an existing column name.',
+          "The table is sorted by the first group column."
+        ))
+        index_group <- 1
+      }
+    }
+
+    # Sort if there are more than 4 rows
+    if (nrow(res) > 4) {
+      # Divide head and body for sorting
+      res_head <- res[1:4, ]
+      res_body <- res[5:nrow(res), ]
+      soc_name <- toupper(soc_name[5:length(soc_name)])
+      soc_order <- ifelse(outdata$order %% 1000 == 0, 0, 1)[5:length(outdata$order)]
+
+      if (sort_order == "count_des") {
+        if (all(c("soc", "par") %in% outdata$components)) {
+          res_body <- cbind(res_body, soc_name, soc_order)
+          res_body <- res_body[order(res_body[[paste0("n_", index_group)]], decreasing = TRUE), ]
+          res_body <- res_body[order(res_body$soc_name, res_body$soc_order), names(res_head)]
+        } else {
+          res_body <- res_body[order(res_body$name), ]
+          res_body <- res_body[order(res_body[[paste0("n_", index_group)]], decreasing = TRUE), ]
+        }
+      } else if (sort_order == "count_asc") {
+        if (all(c("soc", "par") %in% outdata$components)) {
+          res_body <- cbind(res_body, soc_name, soc_order)
+          res_body <- res_body[order(res_body$soc_name, res_body$soc_order, res_body[[paste0("n_", index_group)]]), names(res_head)]
+        } else {
+          res_body <- res_body[order(res_body$name, res_body[[paste0("n_", index_group)]]), ]
+        }
+      } else {
+        if (all(c("soc", "par") %in% outdata$components)) {
+          res_body <- cbind(res_body, soc_name, soc_order)
+          res_body <- res_body[order(res_body$soc_name, res_body$soc_order, res_body$name), names(res_head)]
+        } else {
+          res_body <- res_body[order(res_body$name), ]
+        }
+      }
+      res <- rbind(res_head, res_body)
+    } else {
+      # delete the last blank row if no events
+      res <- res[1:3, ]
+      outdata$order <- outdata$order[1:3]
+      soc_name <- soc_name[1:3]
+    }
   }
 
-  res <- data.frame(name = outdata$name, res)
+  # Control SOC stats
+  if (hide_soc_stats) {
+    res[outdata$order %% 1000 == 0, names(res)[!names(res) == "name"]] <- NA
+  }
+
+  # Transfer to Mock
+  if (mock) {
+    n_mock <- min(20, nrow(res), na.rm = TRUE)
+    res <- to_mock(res, n = nrow(res)) |> as.data.frame()
+  }
 
   if (mock) {
     res <- res[1:n_mock, ]
@@ -229,6 +353,8 @@ format_ae_specific <- function(outdata,
 
   outdata$tbl <- res
   outdata$extend_call <- c(outdata$extend_call, match.call())
+  outdata$filter_method <- filter_method
+  outdata$filter_criteria <- filter_criteria
 
   outdata
 }

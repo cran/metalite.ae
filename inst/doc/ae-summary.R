@@ -91,6 +91,9 @@ outdata |>
 ## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
 knitr::include_graphics("pdf/ae0summary2.pdf")
 
+## ----out.width = "100%", out.height = "400px", echo = FALSE, fig.align = "center"----
+knitr::include_graphics("pdf/empty_ae0specific.pdf")
+
 ## -----------------------------------------------------------------------------
 outdata |>
   format_ae_summary(mock = TRUE) |>

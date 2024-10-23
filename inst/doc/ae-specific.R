@@ -71,7 +71,29 @@ head(tbl$tbl)
 ## -----------------------------------------------------------------------------
 tbl <- outdata |>
   extend_ae_specific_events() |>
-  format_ae_specific(display = c("n", "prop", "events"))
+  format_ae_specific(display = c("n", "prop", "events_count", "events_avg"))
+
+head(tbl$tbl)
+
+## -----------------------------------------------------------------------------
+tbl <- outdata |>
+  extend_ae_specific_events() |>
+  format_ae_specific(
+    display = c("n", "prop", "events_count", "events_avg"),
+    filter_method = "percent",
+    filter_criteria = 6
+  )
+
+head(tbl$tbl)
+
+## -----------------------------------------------------------------------------
+tbl <- outdata |>
+  extend_ae_specific_events() |>
+  format_ae_specific(
+    display = c("n", "prop", "events_count", "events_avg"),
+    sort_order = c("count_des"),
+    sort_column = c("Placebo")
+  )
 
 head(tbl$tbl)
 

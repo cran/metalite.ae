@@ -7,11 +7,16 @@
 format_ae_summary(
   outdata,
   display = c("n", "prop", "total"),
+  hide_soc_stats = FALSE,
   digits_prop = 1,
   digits_ci = 1,
   digits_p = 3,
   digits_dur = c(1, 1),
   digits_events = c(1, 1),
+  filter_method = c("percent", "count"),
+  filter_criteria = 0,
+  sort_order = c("alphabetical", "count_des", "count_asc"),
+  sort_column = NULL,
   mock = FALSE
 )
 }
@@ -27,8 +32,11 @@ format_ae_summary(
 \item \code{diff_ci}: 95\% confidence interval of risk difference using M&N method.
 \item \code{diff_p}: p-value of risk difference using M&N method.
 \item \code{dur}: Average of adverse event duration.
-\item \code{events}: Average number of adverse event per subject.
+\item \code{events_avg}: Average number of adverse event per subject.
+\item \code{events_count}: Count number of adverse event per subject.
 }}
+
+\item{hide_soc_stats}{A boolean value to hide stats for SOC rows.}
 
 \item{digits_prop}{A numeric value of number of digits for proportion value.}
 
@@ -41,6 +49,27 @@ duration of adverse event.}
 
 \item{digits_events}{A numeric value of number of digits for average of
 number of adverse events per subject.}
+
+\item{filter_method}{A character value to specify how to filter rows:
+\itemize{
+\item \code{count}: Filtered based on participant count.
+\item \code{percent}: Filtered based percent incidence.
+}}
+
+\item{filter_criteria}{A numeric value to display rows where at least
+one therapy group has a percent incidence or participant count
+greater than or equal to the specified value.
+If \code{filter_method} is \code{percent}, the value should be between 0 and 100.
+If \code{filter_method} is \code{count}, the value should be greater than 0.}
+
+\item{sort_order}{A character value to specify sorting order:
+\itemize{
+\item \code{alphabetical}: Sort by alphabetical order.
+\item \code{count_des}: Sort by count in descending order.
+\item \code{count_asc}: Sort by count in ascending order.
+}}
+
+\item{sort_column}{A character value of \code{group} in \code{outdata} used to sort a table with.}
 
 \item{mock}{A boolean value to display mock table.}
 }
